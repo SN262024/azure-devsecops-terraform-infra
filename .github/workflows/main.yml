@@ -25,6 +25,18 @@ jobs:
       with:
         terraform_version: 1.14.3
 
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: |
+          {
+            "clientId": "${{ secrets.ARM_CLIENT_ID }}",
+            "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}",
+            "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}",
+            "tenantId": "${{ secrets.ARM_TENANT_ID }}"
+          }
+ 
+
     - name: Terraform Init
       working-directory: Environment-Infra/dev
       run: terraform init
