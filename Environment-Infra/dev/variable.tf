@@ -54,7 +54,7 @@ variable "virtual_machine" {
     admin_username = string
     admin_password = string
   }))
-  sensitive = true
+  
 }
 variable "storage_account" {
   type = map(object({
@@ -79,7 +79,7 @@ variable "sql_server" {
     admin_username = string
     admin_password = string
   }))
-  sensitive = true
+  
 }
 
 variable "sql_database" {
