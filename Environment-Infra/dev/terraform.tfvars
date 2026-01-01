@@ -67,7 +67,7 @@ virtual_machine = {
 
 storage_account = {
   sa1 = {
-    name     = "az3tirestorage01"
+    name     = "az3tiresurendrastorage01"
     rg_name  = "rg-az-3tire-surendra"
     location = "central india"
   }
@@ -76,13 +76,13 @@ storage_account = {
 storage_container = {
   container1 = {
     name            = "data"
-    storage_account = "az3tirestorage01"
+    storage_account = "az3tiresurendrastorage01"
   }
 }
 
 sql_server = {
   sql1 = {
-    server_name    = "az-sql-server01"
+    server_name    = "az-sql-surendra-server01"
     rg_name        = "rg-az-3tire-surendra"
     location       = "central india"
     admin_username = "sqladmin"
