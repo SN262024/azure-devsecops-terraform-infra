@@ -38,6 +38,39 @@ jobs:
     - name: Terraform Init
       working-directory: Environment-Infra/dev
       run: terraform init
+
+       # 🔐 TFLINT SCAN
+    # -------------------------------
+    - name: Install TFLint
+      run: |
+        curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+    - name: Run TFLint
+      working-directory: Environment-Infra/dev
+      run: |
+        tflint --init
+        tflint
+
+    # -------------------------------
+    # 🔐 TFSEC SCAN
+    # -------------------------------
+    - name: Run tfsec
+      uses: aquasecurity/tfsec-action@v1.0.3
+      with:
+        working_directory: Environment-Infra/dev
+        soft_fail: false
+
+    # -------------------------------
+    # 🔐 CHECKOV SCAN
+    # -------------------------------
+    - name: Run Checkov
+      uses: bridgecrewio/checkov-action@v12
+      with:
+        directory: Environment-Infra/dev
+        framework: terraform
+        soft_fail: false
+
+    # --------------------------
      
     
 
