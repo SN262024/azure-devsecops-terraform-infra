@@ -1,27 +1,29 @@
+
 name: Terraform-Infra Workflow
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   terraform:
+    name: Terraform Plan + Security Scans
     runs-on: ubuntu-latest
 
     steps:
-
     - name: Checkout code
-      uses: actions/checkout@v6.0.1
+      uses: actions/checkout@v4
 
     - name: Show folder structure
       run: |
-          pwd
-          ls -l
-          ls -l Environment-Infra || true
+        pwd
+        ls -l
+        ls -l Environment-Infra || true
 
     - name: HashiCorp - Setup Terraform
-      uses: hashicorp/setup-terraform@v3.1.2
+      uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: 1.14.3
 
@@ -35,12 +37,12 @@ jobs:
             "tenantId": "${{ secrets.ARM_TENANT_ID }}",
             "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}"
           }
+
     - name: Terraform Init
       working-directory: Environment-Infra/dev
       run: terraform init
 
-       # 🔐 TFLINT SCAN
-    # -------------------------------
+    # 🔐 TFLINT
     - name: Install TFLint
       run: |
         curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
@@ -51,19 +53,14 @@ jobs:
         tflint --init
         tflint || true
 
-
-    # -------------------------------
-    # 🔐 TFSEC SCAN
-    # -------------------------------
+    # 🔐 TFSEC
     - name: Run tfsec
       uses: aquasecurity/tfsec-action@v1.0.3
       with:
         working_directory: Environment-Infra/dev
-        soft_fail: false
+        soft_fail: true
 
-    # -------------------------------
-    # 🔐 CHECKOV SCAN
-    # -------------------------------
+    # 🔐 CHECKOV
     - name: Run Checkov
       uses: bridgecrewio/checkov-action@v12
       with:
@@ -71,28 +68,58 @@ jobs:
         framework: terraform
         soft_fail: true
 
-    # --------------------------
-     
-    
-
     - name: Terraform Validate
       working-directory: Environment-Infra/dev
-      run: terraform validate 
-    
+      run: terraform validate
 
     - name: Terraform Plan
       working-directory: Environment-Infra/dev
-      run: terraform plan 
-      
-     
+      run: terraform plan -out=tfplan
 
+    - name: Upload Terraform Plan
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfplan
+        path: Environment-Infra/dev/tfplan
 
-    # - name: Terraform plan
-    #   working-directory: Enviroment-Infra/dev
-    #   run: terraform plan
+  terraform-apply:
+    name: Terraform Apply (Manual Approval)
+    runs-on: ubuntu-latest
+    needs: terraform
 
-      
-    
-      
-    
-    
+    environment:
+      name: terraform-approval   # 👈 MANUAL APPROVAL
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: HashiCorp - Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.14.3
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: |
+          {
+            "clientId": "${{ secrets.ARM_CLIENT_ID }}",
+            "clientSecret": "${{ secrets.ARM_CLIENT_SECRET }}",
+            "tenantId": "${{ secrets.ARM_TENANT_ID }}",
+            "subscriptionId": "${{ secrets.ARM_SUBSCRIPTION_ID }}"
+          }
+
+    - name: Download Terraform Plan
+      uses: actions/download-artifact@v4
+      with:
+        name: tfplan
+        path: Environment-Infra/dev
+
+    - name: Terraform Init
+      working-directory: Environment-Infra/dev
+      run: terraform init
+
+    - name: Terraform Apply
+      working-directory: Environment-Infra/dev
+      run: terraform apply -auto-approve tfplan
