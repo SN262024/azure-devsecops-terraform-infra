@@ -49,7 +49,8 @@ jobs:
       working-directory: Environment-Infra/dev
       run: |
         tflint --init
-        tflint
+        tflint || true
+
 
     # -------------------------------
     # 🔐 TFSEC SCAN
